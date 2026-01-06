@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Circle Reflection Animation</title>
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    background: #222;
+    border: 2px solid #fff;
+    margin-top: 20px;
+  }
+  h2 {
+    color: #0ff;
+  }
+  /* ===== SIMPLE TOP NAV STRIP ===== */
+.nav-strip {
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.nav-strip a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.nav-strip a:hover {
+    background: #1e293b;
+}
+
+</style>
+</head>
+<div class="nav-strip">
+  <a href="CONIC.html">Home</a>
+  <a href="conic_sections_simple.html">📈 Graph Representation</a>
+    <a href="ellipse.html">⬭ Ellipse</a>
+    <a href="parabola.html">∪ Parabola</a>
+    <a href="hyperbola.html">⌔ Hyperbola</a>
+</div>
+<body>
+
+<h2>Circle Reflection</h2>
+<canvas id="canvas" width="900" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const center = { x: 450, y: 300 }; // Circle center
+const radius = 150;                 // Circle radius
+
+// Create rays from center
+let rays = [];
+const rayCount = 60; // rays covering full circle
+for(let i=0; i<rayCount; i++){
+    let angle = (2*Math.PI / rayCount) * i;
+    rays.push({ angle: angle, length: 0, dir: 1 }); // dir = 1 for outward, -1 for inward
+}
+
+// Draw the circle
+function drawCircle(){
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, 2*Math.PI);
+    ctx.stroke();
+
+    // Center point
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, 6, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Center', center.x + 10, center.y - 10);
+}
+
+// Animate rays
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawCircle();
+
+    const speed = 1.5; // slow speed
+
+    rays.forEach(ray=>{
+        // Update ray length
+        ray.length += speed * ray.dir;
+
+        // Reverse direction at circle boundary or center
+        if(ray.length >= radius) ray.dir = -1;
+        if(ray.length <= 0) ray.dir = 1;
+
+        // Compute ray end point
+        const xEnd = center.x + ray.length * Math.cos(ray.angle);
+        const yEnd = center.y + ray.length * Math.sin(ray.angle);
+
+        // Color: yellow outward, cyan inward
+        ctx.strokeStyle = ray.dir === 1 ? 'yellow' : 'cyan';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = ray.dir === 1 ? 'yellow' : 'cyan';
+        ctx.shadowBlur = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.lineTo(xEnd, yEnd);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Conic Sections — Plane slicing a cone (Simple HTML)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  /* ===== SIMPLE TOP NAV STRIP ===== */
+.nav-strip {
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.nav-strip a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.nav-strip a:hover {
+    background: #1e293b;
+}
+
+  :root {
+    --bg: #111217;
+    --panel: #0f1720;
+    --accent: #ff6b6b;
+    --muted: #aab3c2;
+    --good: #7be495;
+  }
+  html,body { height:100%; margin:0; background:var(--bg); color:#eef2ff; font-family:Inter,system-ui,Arial;}
+  .wrap { display:flex; gap:14px; padding:14px; box-sizing:border-box; height:100%; }
+  .left, .right {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:10px; padding:12px; box-sizing:border-box;
+  }
+  .left { flex:0 0 420px; min-width:320px; }
+  .right { flex:1; min-width:320px; display:flex; flex-direction:column; gap:8px; }
+  canvas { background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.02), transparent 20%), transparent; border-radius:8px; display:block; width:100%; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  h1 { font-size:18px; margin:0; color:#fff; letter-spacing:0.6px; }
+  .controls { margin-top:10px; display:grid; gap:8px; }
+  label { font-size:13px; color:var(--muted); margin-bottom:6px; display:block; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:8px; align-items:center; }
+  button { padding:7px 10px; border-radius:8px; border: none; background:#1a2030; color:#e9f0ff; cursor:pointer; }
+  button.primary { background: linear-gradient(90deg,#ff9b6b,#ff6b9b); color:#091018; font-weight:700; }
+  .preset-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .info { font-size:13px; color:var(--muted); }
+  .badge { padding:4px 8px; background:#071028; border-radius:999px; color:#7fe0ad; font-weight:600; }
+  footer { font-size:12px; color:var(--muted); margin-top:6px; }
+  @media (max-width:900px){
+    .wrap { flex-direction:column; padding:10px; }
+    .left { width:100%; min-width:unset; }
+  }
+</style>
+</head>
+<div class="nav-strip">
+    <a href="index.html">Home</a>
+    <a href="circle.html">◯ Circle</a>
+    <a href="ellipse.html">⬭ Ellipse</a>
+    <a href="parabola.html">∪ Parabola</a>
+    <a href="hyperbola.html">⌔ Hyperbola</a>
+</div>
+<body>
+<div class="wrap">
+  <div class="left">
+    <header>
+      <h1>Conic sections — slice a cone</h1>
+      <div class="badge" id="typeBadge">—</div>
+    </header>
+
+    <div style="margin-top:10px;">
+      <canvas id="sideCanvas" width="420" height="420" style="height:420px"></canvas>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label>Plane slope <strong>m</strong> (z = m·x + h): <span id="mVal">0.00</span></label>
+        <input id="mRange" type="range" min="-2.0" max="2.0" step="0.01" value="0.00">
+      </div>
+
+      <div>
+        <label>Plane height <strong>h</strong> (z-intercept): <span id="hVal">1.20</span></label>
+        <input id="hRange" type="range" min="-3.5" max="3.5" step="0.01" value="1.20">
+      </div>
+
+      <div class="preset-row">
+        <button id="circleBtn">Circle</button>
+        <button id="ellipseBtn">Ellipse</button>
+        <button id="parabolaBtn">Parabola</button>
+        <button id="hyperBtn">Hyperbola</button>
+        <button id="randBtn">Random</button>
+        <button id="playBtn" class="primary">Play sweep</button>
+      </div>
+
+      <div class="info">
+        <div><strong>Cone equation:</strong> x² + y² − z² = 0 (double cone)</div>
+        <div style="margin-top:6px"><strong>Substituted quadratic:</strong> <code id="quadratic">—</code></div>
+      </div>
+      <footer>Tip: Side view shows cone (z vertical). Right panel draws the intersection curve in the xy-plane (top view).</footer>
+    </div>
+  </div>
+
+  <div class="right">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="flex:1;">
+        <h2 style="margin:0 0 6px 0; font-size:16px;">Intersection curve (top view)</h2>
+        <div class="info">The curve is computed from <em>x² + y² − (m x + h)² = 0</em>. Where right side ≥ 0, y = ±√((m x + h)² − x²).</div>
+      </div>
+      <div style="text-align:right; min-width:130px;">
+        <div class="info">Eccentricity idea: <br><strong style="color:#fff" id="conicType">—</strong></div>
+      </div>
+    </div>
+
+    <canvas id="curveCanvas" width="800" height="480" style="height:480px"></canvas>
+
+    <div style="display:flex; gap:10px;">
+      <div class="info" style="flex:1">
+        <strong>Equation form</strong>
+        <div id="coeffsText">A x² + B xy + C y² + D x + E y + F = 0</div>
+      </div>
+      <div style="min-width:200px; display:flex; align-items:center; gap:8px;">
+        <button id="downloadPNG">Download PNG</button>
+        <button id="resetView">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Utility: draw cone side and plane; compute intersection curve points */
+const sideCanvas = document.getElementById('sideCanvas');
+const sideCtx = sideCanvas.getContext('2d');
+const curveCanvas = document.getElementById('curveCanvas');
+const curveCtx = curveCanvas.getContext('2d');
+
+const mRange = document.getElementById('mRange');
+const hRange = document.getElementById('hRange');
+const mVal = document.getElementById('mVal');
+const hVal = document.getElementById('hVal');
+const typeBadge = document.getElementById('typeBadge');
+const conicType = document.getElementById('conicType');
+const quadraticEl = document.getElementById('quadratic');
+const coeffsText = document.getElementById('coeffsText');
+
+const circleBtn = document.getElementById('circleBtn');
+const ellipseBtn = document.getElementById('ellipseBtn');
+const parabolaBtn = document.getElementById('parabolaBtn');
+const hyperBtn = document.getElementById('hyperBtn');
+const randBtn = document.getElementById('randBtn');
+const playBtn = document.getElementById('playBtn');
+
+let playing = false;
+let playStart = 0;
+
+// coordinate mapping for side view: x horizontal to right, z vertical up
+const sideW = sideCanvas.width, sideH = sideCanvas.height;
+const sideCenterX = sideW/2, sideCenterY = sideH/2 + 40;
+const scaleSide = 40; // px per unit
+
+// coordinate mapping for top view (curve): x horizontal, y vertical
+const curveW = curveCanvas.width, curveH = curveCanvas.height;
+const curveCenterX = curveW/2, curveCenterY = curveH/2;
+const scaleCurve = 60; // px per unit
+
+function drawSide(m, h) {
+  sideCtx.clearRect(0,0,sideW,sideH);
+  // background grid
+  sideCtx.fillStyle = '#07101a';
+  sideCtx.fillRect(0,0,sideW,sideH);
+
+  // axes
+  sideCtx.strokeStyle = '#2a3340'; sideCtx.lineWidth = 1;
+  sideCtx.beginPath();
+  // x axis line
+  sideCtx.moveTo(0, sideCenterY);
+  sideCtx.lineTo(sideW, sideCenterY);
+  // z axis
+  sideCtx.moveTo(sideCenterX, sideH);
+  sideCtx.lineTo(sideCenterX, 0);
+  sideCtx.stroke();
+
+  // draw cone (double nappe) as filled triangles for clarity
+  sideCtx.save();
+  sideCtx.translate(sideCenterX, sideCenterY);
+  // draw upper nappe
+  sideCtx.beginPath();
+  sideCtx.moveTo(0,0);
+  sideCtx.lineTo(-3.5*scaleSide, -3.5*scaleSide);
+  sideCtx.lineTo(3.5*scaleSide, -3.5*scaleSide);
+  sideCtx.closePath();
+  sideCtx.fillStyle = 'rgba(70,140,255,0.14)';
+  sideCtx.fill();
+  sideCtx.strokeStyle = 'rgba(120,180,255,0.6)';
+  sideCtx.stroke();
+
+  // lower nappe
+  sideCtx.beginPath();
+  sideCtx.moveTo(0,0);
+  sideCtx.lineTo(-3.5*scaleSide, 3.5*scaleSide);
+  sideCtx.lineTo(3.5*scaleSide, 3.5*scaleSide);
+  sideCtx.closePath();
+  sideCtx.fillStyle = 'rgba(70,140,255,0.12)';
+  sideCtx.fill();
+  sideCtx.stroke();
+
+  // draw dashed axis labels
+  sideCtx.restore();
+
+  // draw plane line: z = m*x + h
+  sideCtx.save();
+  sideCtx.translate(sideCenterX, sideCenterY);
+  sideCtx.strokeStyle = '#ffb36b';
+  sideCtx.lineWidth = 2;
+  sideCtx.setLineDash([]);
+  sideCtx.beginPath();
+  // compute two points along x range
+  const xLeft = - (sideCenterX/scaleSide);
+  const xRight = (sideCenterX/scaleSide);
+  const z1 = m * xLeft + h;
+  const z2 = m * xRight + h;
+  sideCtx.moveTo(xLeft*scaleSide, -z1*scaleSide);
+  sideCtx.lineTo(xRight*scaleSide, -z2*scaleSide);
+  sideCtx.stroke();
+
+  // mark intersection with cone apex/edges visually
+  // draw small point at (0,h)
+  sideCtx.fillStyle = '#ffd1b0';
+  sideCtx.beginPath();
+  sideCtx.arc(0, -h*scaleSide, 4,0,Math.PI*2);
+  sideCtx.fill();
+
+  sideCtx.restore();
+
+  // labels
+  sideCtx.fillStyle = '#bcd';
+  sideCtx.font = '13px Inter, Arial';
+  sideCtx.fillText('x →', sideW - 40, sideCenterY - 6);
+  sideCtx.fillText('z ↑', sideCenterX + 8, 20);
+}
+
+function computeCurvePoints(m, h) {
+  // Solve for y: x^2 + y^2 - (m x + h)^2 = 0
+  // => y^2 = (m x + h)^2 - x^2
+  // We'll sweep x across a window and collect points where rhs >= 0
+  const ptsPos = []; // upper branch
+  const ptsNeg = []; // lower branch
+  const xs = [];
+  // choose x range wide enough to capture branches
+  const xMin = -6, xMax = 6;
+  const steps = 1400; // high density for smooth curves
+  for (let i=0;i<=steps;i++){
+    const x = xMin + (i/steps)*(xMax - xMin);
+    const rad = (m*x + h)*(m*x + h) - x*x;
+    if (rad >= 0) {
+      const yAbs = Math.sqrt(rad);
+      ptsPos.push({x: x, y: yAbs});
+      ptsNeg.push({x: x, y: -yAbs});
+    } else {
+      // insert separator to avoid connecting across gap
+      ptsPos.push(null);
+      ptsNeg.push(null);
+    }
+  }
+  return {pos: ptsPos, neg: ptsNeg};
+}
+
+function drawCurve(m,h) {
+  curveCtx.clearRect(0,0,curveW,curveH);
+  // background
+  curveCtx.fillStyle = '#061018';
+  curveCtx.fillRect(0,0,curveW,curveH);
+
+  // grid lines
+  curveCtx.strokeStyle = '#0f2230';
+  curveCtx.lineWidth = 1;
+  for (let gx=-6;gx<=6;gx++){
+    const cx = curveCenterX + gx*scaleCurve;
+    curveCtx.beginPath();
+    curveCtx.moveTo(cx,0); curveCtx.lineTo(cx,curveH); curveCtx.stroke();
+  }
+  for (let gy=-6;gy<=6;gy++){
+    const cy = curveCenterY + gy*scaleCurve;
+    curveCtx.beginPath();
+    curveCtx.moveTo(0,cy); curveCtx.lineTo(curveW,cy); curveCtx.stroke();
+  }
+
+  // axis
+  curveCtx.strokeStyle = '#2b3a48'; curveCtx.lineWidth = 1.5;
+  curveCtx.beginPath();
+  curveCtx.moveTo(0, curveCenterY); curveCtx.lineTo(curveW, curveCenterY);
+  curveCtx.moveTo(curveCenterX, 0); curveCtx.lineTo(curveCenterX, curveH);
+  curveCtx.stroke();
+
+  // compute points
+  const pts = computeCurvePoints(m,h);
+
+  // draw positive branch
+  curveCtx.strokeStyle = '#ff7b6b';
+  curveCtx.lineWidth = 2.5;
+  curveCtx.beginPath();
+  let started = false;
+  for (let p of pts.pos){
+    if (!p) { started = false; continue;}
+    const sx = curveCenterX + p.x*scaleCurve;
+    const sy = curveCenterY - p.y*scaleCurve;
+    if (!started) { curveCtx.moveTo(sx, sy); started = true; }
+    else curveCtx.lineTo(sx, sy);
+  }
+  curveCtx.stroke();
+
+  // draw negative branch
+  curveCtx.strokeStyle = '#ffd1b0';
+  curveCtx.lineWidth = 2.5;
+  curveCtx.beginPath();
+  started = false;
+  for (let p of pts.neg){
+    if (!p) { started = false; continue;}
+    const sx = curveCenterX + p.x*scaleCurve;
+    const sy = curveCenterY - p.y*scaleCurve;
+    if (!started) { curveCtx.moveTo(sx, sy); started = true; }
+    else curveCtx.lineTo(sx, sy);
+  }
+  curveCtx.stroke();
+
+  // draw center label and ticks
+  curveCtx.fillStyle = '#cfe7ff';
+  curveCtx.font = '12px Inter, Arial';
+  curveCtx.fillText('x', curveW - 30, curveCenterY - 6);
+  curveCtx.fillText('y', curveCenterX + 6, 14);
+}
+
+function detectConic(m,h){
+  // Quadratic coefficients after substitution:
+  // (1 - m^2) x^2 + 0*x*y + 1*y^2 + (-2 m h) x + 0*y + (-h^2) = 0
+  const A = 1 - m*m;
+  const B = 0;
+  const C = 1;
+  const D = -2*m*h;
+  const E = 0;
+  const F = -h*h;
+  // discriminant for general conic: Delta = B^2 - 4AC
+  const disc = B*B - 4*A*C;
+  let type = 'Ellipse';
+  if (Math.abs(A) < 1e-6) type = 'Parabola';
+  else if (A * C < 0) type = 'Hyperbola';
+  else if (A > 0 && C > 0) type = 'Ellipse';
+  // check circle special case: A==C and B==0 and D==E==0 -> circle centered at origin when h=0 and m=0
+  if (Math.abs(A - C) < 1e-6 && Math.abs(B) < 1e-6 && Math.abs(D) < 1e-6 && Math.abs(E) < 1e-6) type = 'Circle';
+  return {type, coeffs:{A,B,C,D,E,F}, disc};
+}
+
+function updateUI() {
+  const m = parseFloat(mRange.value);
+  const h = parseFloat(hRange.value);
+  mVal.textContent = m.toFixed(2);
+  hVal.textContent = h.toFixed(2);
+
+  drawSide(m,h);
+  drawCurve(m,h);
+
+  const det = detectConic(m,h);
+  typeBadge.textContent = det.type.toUpperCase();
+  conicType.textContent = det.type;
+  // show quadratic
+  quadraticEl.textContent = `${(det.coeffs.A).toFixed(3)} x² + ${(det.coeffs.B).toFixed(3)} xy + ${(det.coeffs.C).toFixed(3)} y² + ${(det.coeffs.D).toFixed(3)} x + ${(det.coeffs.E).toFixed(3)} y + ${(det.coeffs.F).toFixed(3)} = 0`;
+  coeffsText.textContent = `A=${det.coeffs.A.toFixed(4)}, B=${det.coeffs.B.toFixed(4)}, C=${det.coeffs.C.toFixed(4)}, D=${det.coeffs.D.toFixed(4)}, F=${det.coeffs.F.toFixed(4)}`;
+}
+
+// presets
+circleBtn.addEventListener('click', ()=>{
+  mRange.value = 0; hRange.value = 1.2; updateUI();
+});
+ellipseBtn.addEventListener('click', ()=>{
+  mRange.value = 0.5; hRange.value = 1.0; updateUI();
+});
+parabolaBtn.addEventListener('click', ()=>{
+  mRange.value = 1.0; hRange.value = 0.9; updateUI();
+});
+hyperBtn.addEventListener('click', ()=>{
+  mRange.value = 1.6; hRange.value = 0.1; updateUI();
+});
+randBtn.addEventListener('click', ()=>{
+  mRange.value = (Math.random()*4-2).toFixed(2);
+  hRange.value = (Math.random()*7-3.5).toFixed(2);
+  updateUI();
+});
+
+// sliders
+mRange.addEventListener('input', updateUI);
+hRange.addEventListener('input', updateUI);
+
+// play sweep
+playBtn.addEventListener('click', ()=>{
+  if (!playing) {
+    playing = true; playBtn.textContent = 'Stop'; playStart = performance.now(); requestAnimationFrame(sweep);
+  } else {
+    playing = false; playBtn.textContent = 'Play sweep';
+  }
+});
+function sweep(t) {
+  if (!playing) return;
+  // animate h from 3 to -3 over 6s
+  const duration = 200000;
+  const p = ((t - playStart) % duration) / duration;
+  const s = 0.5 - 0.5 * Math.cos(p * Math.PI*2); // smooth
+  const h = 3*(1-s) + (-3)*s;
+  // m optionally oscillates a bit
+  const baseM = parseFloat(mRange.value);
+  const m = (baseM*0.5) + 0.9*Math.sin(t*0.001);
+  mRange.value = m.toFixed(2);
+  hRange.value = h.toFixed(2);
+  updateUI();
+  requestAnimationFrame(sweep);
+}
+
+// download png of current curve canvas
+document.getElementById('downloadPNG').addEventListener('click', ()=>{
+  const link = document.createElement('a');
+  link.download = 'conic_intersection.png';
+  link.href = curveCanvas.toDataURL('image/png');
+  link.click();
+});
+document.getElementById('resetView').addEventListener('click', ()=>{
+  mRange.value = 0; hRange.value = 1.2;
+  updateUI();
+});
+
+// initial draw
+updateUI();
+</script>
+</body>
+</html>

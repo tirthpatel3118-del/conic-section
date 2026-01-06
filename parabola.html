@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parabola Light Reflection</title>
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    background: #222;
+    border: 2px solid #fff;
+    margin-top: 20px;
+  }
+  h2 {
+    color: #0ff;
+  }
+  /* ===== SIMPLE TOP NAV STRIP ===== */
+.nav-strip {
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.nav-strip a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.nav-strip a:hover {
+    background: #1e293b;
+}
+
+</style>
+</head>
+<div class="nav-strip">
+  <a href="index.html">Home</a>
+  <a href="conic_sections_simple.html">📈 Graph Representation</a>
+    <a href="circle.html">◯ Circle</a>
+    <a href="ellipse.html">⬭ Ellipse</a>
+    <a href="hyperbola.html">⌔ Hyperbola</a>
+</div>
+<body>
+
+<h2>Parabola Reflection</h2>
+<canvas id="canvas" width="900" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Parabola parameters
+const centerX = 450;
+const centerY = 400;
+const p = 80; // vertex to focus
+const focus = { x: centerX, y: centerY - p };
+
+// Rays covering most of the parabola
+let rays = [];
+const raySpacing = 10; // closer rays cover the curve better
+for(let i=-300; i<=300; i+=raySpacing){
+    rays.push({ x: centerX + i, y:50 });
+}
+
+// Parabola equation: y = vertex_y - (x^2)/(4p)
+function parabolaY(x){
+    return centerY - ((x - centerX)*(x - centerX))/(4*p);
+}
+
+// Draw parabola and focus
+function drawParabola(){
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(let x = centerX - 300; x <= centerX + 300; x += 1){
+        let y = parabolaY(x);
+        if(x === centerX - 300) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Vertex
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 5, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Vertex', centerX + 10, centerY + 5);
+
+    // Focus
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(focus.x, focus.y, 6, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Focus', focus.x + 10, focus.y - 10);
+}
+
+// Animate rays
+let animationStep = 0;
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawParabola();
+
+    animationStep += 2;
+
+    rays.forEach(ray=>{
+        let yPos = ray.y + animationStep;
+
+        let yParabola = parabolaY(ray.x);
+
+        if(yPos < yParabola){
+            // Incoming parallel ray
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = 'yellow';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(ray.x, ray.y);
+            ctx.lineTo(ray.x, yPos);
+            ctx.stroke();
+        } else {
+            // Reflected ray to focus
+            ctx.strokeStyle = 'cyan';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = 'cyan';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(ray.x, yParabola);
+            ctx.lineTo(focus.x, focus.y);
+            ctx.stroke();
+        }
+    });
+
+    // Reset animation to make continuous beam
+    if(animationStep > 400) animationStep = 0;
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

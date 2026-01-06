@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ellipse Reflection Animation</title>
+<style>
+    /* ===== SIMPLE TOP NAV STRIP ===== */
+.nav-strip {
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.nav-strip a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.nav-strip a:hover {
+    background: #1e293b;
+}
+
+  body {
+    background: #111;
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    background: #222;
+    border: 2px solid #fff;
+    margin-top: 20px;
+  }
+  h2 {
+    color: #0ff;
+  }
+</style>
+<div class="nav-strip">
+  <a href="index.html">Home</a>
+  <a href="conic_sections_simple.html">📈 Graph Representation</a>
+    <a href="circle.html">◯ Circle</a>
+    <a href="parabola.html">∪ Parabola</a>
+    <a href="hyperbola.html">⌔ Hyperbola</a>
+</div>
+<body>
+
+<h2>Ellipse Reflection</h2>
+<canvas id="canvas" width="900" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Ellipse parameters
+const center = { x: 450, y: 300 };
+const a = 200; // semi-major axis
+const b = 120; // semi-minor axis
+
+// Foci
+const c = Math.sqrt(a*a - b*b);
+const F1 = { x: center.x - c, y: center.y };
+const F2 = { x: center.x + c, y: center.y };
+
+// Rays along ellipse
+const rayCount = 60;
+let rays = [];
+for(let i=0;i<rayCount;i++){
+    let t = (2*Math.PI / rayCount) * i;
+    rays.push({ t: t, progress: 0 }); // progress from 0 (F1) to 1 (F2)
+}
+
+// Ellipse parametric
+function ellipseXY(t){
+    return {
+        x: center.x + a * Math.cos(t),
+        y: center.y + b * Math.sin(t)
+    };
+}
+
+// Draw ellipse and foci
+function drawEllipse(){
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(let t=0;t<=2*Math.PI;t+=0.01){
+        let pt = ellipseXY(t);
+        if(t===0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+
+    // F1
+    ctx.fillStyle='red';
+    ctx.beginPath();
+    ctx.arc(F1.x, F1.y, 6, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText('F1', F1.x-20, F1.y-10);
+
+    // F2
+    ctx.fillStyle='red';
+    ctx.beginPath();
+    ctx.arc(F2.x, F2.y, 6, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText('F2', F2.x+10, F2.y-10);
+}
+
+// Animate rays progressively
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawEllipse();
+
+    rays.forEach(ray=>{
+        const pt = ellipseXY(ray.t);
+
+        // Progress along path
+        ray.progress += 0.01; // speed
+        if(ray.progress > 1) ray.progress = 0; // loop
+
+        // Compute intermediate point along incoming ray (F1 → ellipse)
+        const xi = F1.x + (pt.x - F1.x) * Math.min(ray.progress*2,1);
+        const yi = F1.y + (pt.y - F1.y) * Math.min(ray.progress*2,1);
+
+        // Draw incoming ray (yellow)
+        if(ray.progress <= 0.5){
+            ctx.strokeStyle='yellow';
+            ctx.lineWidth=2;
+            ctx.shadowColor='yellow';
+            ctx.shadowBlur=8;
+            ctx.beginPath();
+            ctx.moveTo(F1.x, F1.y);
+            ctx.lineTo(xi, yi);
+            ctx.stroke();
+        } else {
+            // Compute reflected ray point along ellipse to F2
+            const pr = (ray.progress-0.5)*2; // 0 to 1 for reflected part
+            const xr = pt.x + (F2.x - pt.x)*pr;
+            const yr = pt.y + (F2.y - pt.y)*pr;
+
+            // Draw reflected ray (cyan)
+            ctx.strokeStyle='cyan';
+            ctx.lineWidth=2;
+            ctx.shadowColor='cyan';
+            ctx.shadowBlur=10;
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(xr, yr);
+            ctx.stroke();
+        }
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+
+
+</html>

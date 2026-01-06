@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hyperbola Reflection Animation</title>
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    background: #222;
+    border: 2px solid #fff;
+    margin-top: 20px;
+  }
+  h2 {
+    color: #0ff;
+  }
+  /* ===== SIMPLE TOP NAV STRIP ===== */
+.nav-strip {
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.nav-strip a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.nav-strip a:hover {
+    background: #1e293b;
+}
+
+</style>
+<div class="nav-strip">
+  <a href="index.html">Home</a>
+  <a href="conic_sections_simple.html">📈 Graph Representation</a>
+    <a href="circle.html">◯ Circle</a>
+    <a href="ellipse.html">⬭ Ellipse</a>
+    <a href="parabola.html">∪ Parabola</a>
+</div>
+<body>
+
+<h2>Hyperbola Reflection</h2>
+<canvas id="canvas" width="900" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Hyperbola parameters
+const center = { x: 450, y: 300 };
+const a = 150;  // semi-transverse axis
+const b = 100;  // semi-conjugate axis
+
+// Compute foci distance
+const c = Math.sqrt(a*a + b*b);
+const F1 = { x: center.x - c, y: center.y }; // left focus
+const F2 = { x: center.x + c, y: center.y }; // right focus
+
+// Generate rays for both branches
+let rays = [];
+const rayCount = 40; // rays per branch
+for(let i=0;i<rayCount;i++){
+    // Parametric y offset along branch
+    let yOffset = b + i*(300-b)/rayCount;
+    rays.push({ yOffset: yOffset, progress: 0, branch: 'top' });
+    rays.push({ yOffset: yOffset, progress: 0, branch: 'bottom' });
+}
+
+// Hyperbola point function for right branch
+function hyperbolaXY(x, branch){
+    let y = b * Math.sqrt((x*x)/(a*a) -1);
+    if(branch==='bottom') y = -y;
+    return { x: center.x + x, y: center.y + y };
+}
+
+// Hyperbola point function for left branch
+function hyperbolaXYLeft(x, branch){
+    let y = b * Math.sqrt((x*x)/(a*a) -1);
+    if(branch==='bottom') y = -y;
+    return { x: center.x - x, y: center.y + y };
+}
+
+// Draw hyperbola
+function drawHyperbola(){
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+
+    // Right branch
+    ctx.beginPath();
+    for(let x=a; x<=300; x+=1){
+        let pt = hyperbolaXY(x,'top');
+        if(x===a) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+    }
+    for(let x=a; x<=300; x+=1){
+        let pt = hyperbolaXY(x,'bottom');
+        ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+
+    // Left branch
+    ctx.beginPath();
+    for(let x=a; x<=300; x+=1){
+        let pt = hyperbolaXYLeft(x,'top');
+        if(x===a) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+    }
+    for(let x=a; x<=300; x+=1){
+        let pt = hyperbolaXYLeft(x,'bottom');
+        ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+
+    // Foci
+    ctx.fillStyle='red';
+    ctx.beginPath();
+    ctx.arc(F1.x, F1.y, 6,0,2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText('F1', F1.x-25, F1.y-10);
+
+    ctx.fillStyle='red';
+    ctx.beginPath();
+    ctx.arc(F2.x, F2.y, 6,0,2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText('F2', F2.x+10, F2.y-10);
+}
+
+// Animate rays
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawHyperbola();
+
+    rays.forEach(ray=>{
+        // Choose branch: left or right
+        let pt;
+        if(ray.branch==='top' || ray.branch==='bottom'){
+            // Right branch
+            pt = hyperbolaXY(a + ray.yOffset, ray.branch);
+        }
+
+        // Progress animation
+        ray.progress += 0.01;
+        if(ray.progress > 1) ray.progress = 0;
+
+        // Incoming from F1
+        let xi = F1.x + (pt.x - F1.x) * Math.min(ray.progress*2,1);
+        let yi = F1.y + (pt.y - F1.y) * Math.min(ray.progress*2,1);
+
+        if(ray.progress <= 0.5){
+            // Draw incoming
+            ctx.strokeStyle='yellow';
+            ctx.lineWidth=2;
+            ctx.shadowColor='yellow';
+            ctx.shadowBlur=8;
+            ctx.beginPath();
+            ctx.moveTo(F1.x,F1.y);
+            ctx.lineTo(xi, yi);
+            ctx.stroke();
+        } else {
+            // Reflected to appear from F2
+            let pr = (ray.progress-0.5)*2;
+            let xr = pt.x + (F2.x - pt.x)*pr;
+            let yr = pt.y + (F2.y - pt.y)*pr;
+
+            ctx.strokeStyle='cyan';
+            ctx.lineWidth=2;
+            ctx.shadowColor='cyan';
+            ctx.shadowBlur=10;
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(xr, yr);
+            ctx.stroke();
+        }
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
